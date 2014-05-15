@@ -3,6 +3,15 @@
 *.ko
 *.obj
 *.elf
+*.ccspjt
+*.cof
+*.err
+*.esym
+*.lst
+*.STA
+*.sym
+*.xsym
+*.tre
 
 # Libraries
 *.lib
