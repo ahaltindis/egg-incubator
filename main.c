@@ -31,7 +31,7 @@
 #define FAN_PIN       PIN_C5
 
 #define TOTAL_SETUP_SCREEN 6  // Ayarlar kisminda gezilecek ayar sekmesi sayisi
-#define TOTAL_INFO_SCREEN 4   // Sirayla gosterilecek bilgi ekran sayisi
+#define TOTAL_INFO_SCREEN 5   // Sirayla gosterilecek bilgi ekran sayisi
 #define MAIN_SCREEN_WAIT 77 // Her ekranin gosterilme suresi Hesap: 77*65ms = 5sn
 
 #define MOTOR_STEPS_INTERVAL 15 // Her adim arasinda beklenilecek sure -> motor hizini belirler.
@@ -61,6 +61,9 @@ int8 temp_sensivity = 5;   // Sicakliga karsi duyarlilik
 int8 lint_count = 0; // Lcd Kesmesinde olusan kesmeleri sayan degisken
 
 signed int16 motor_cur_step = 0; // Step motorun o anki adimini tutan degisken
+int8 motor_period = 6;  // Motorun dondurulme periyodu
+unsigned int8 next_turn_hr = 0;
+unsigned int8 next_turn_min = 0;
 
 void motor_move_nth(int8 step) {
    step = step % 200;           
@@ -128,13 +131,17 @@ void menu_int() {
          lcd_send_byte(0, 0x0d);
       }
    }
-
+   
    if(input(BUTTON_UP) && cur_screen_no > 0) {
-      if ( cur_screen_no == 5 ) {   // LCD TEST MENU
+      if ( cur_screen_no == 3 ) {   // PERIYOT AYARLAMA MENU
+         motor_period++;
+         if ( motor_period > 24 )
+            motor_period = 1;      
+      }
+      else if ( cur_screen_no == 5 ) {   // HARICI TEST MENU
          if ( settings_no == 1) {
             heater = !heater;            
-         }
-         
+         }         
          else if ( settings_no == 2) {
             cooler = !cooler;         
          }
@@ -151,7 +158,12 @@ void menu_int() {
    }
    
    if(input(BUTTON_DOWN) && cur_screen_no > 0) {
-      if ( cur_screen_no == 5 ) {   // LCD TEST MENU
+      if ( cur_screen_no == 3 ) {   // PERIYOT AYARLAMA MENU
+         motor_period--;
+         if ( motor_period ==  0 )
+            motor_period = 24;      
+      }
+      else if ( cur_screen_no == 5 ) {   // HARICI TEST MENU
          if ( settings_no == 1) {
             heater = !heater;            
          }
@@ -172,7 +184,10 @@ void menu_int() {
    }
       
    if(input(BUTTON_CHG) && cur_screen_no > 0) {
-      if ( cur_screen_no == 5 ) {
+      if ( cur_screen_no == 3 ) {   // PERIYOT AYARLAMA MENU
+         settings_no = 1;
+      }
+      if ( cur_screen_no == 5 ) {   // HARICI TEST MENU
         // TEST isitici, sogutucu
           settings_no++;
          
@@ -190,7 +205,7 @@ void menu_int() {
                break;
          }
       }
-      else if ( cur_screen_no == 6 ) {
+      else if ( cur_screen_no == 6 ) { // MOTOR TEST MENU
          settings_no = 1;
          motor_cur_step = 0;
          lcd_update = 1;
@@ -226,7 +241,7 @@ void lcd_int() { // Kesme Periyodu = 65ms
       else {         
          printf(lcd_putc, "KULUCKA MAKINESI      ");      
       }     
-      
+// ################ BILGI EKRANI KISMI ################      
       switch(cur_info_no)
       {
          case 1:
@@ -245,12 +260,17 @@ void lcd_int() { // Kesme Periyodu = 65ms
             lcd_gotoxy(1,2);
             printf(lcd_putc, "ISITMA: %1u FAN: %1u     ", heater, cooler);
             break;
+         case 5:
+            lcd_gotoxy(1,2);
+            printf(lcd_putc, "D. Vakti: %02d:%02d       ", next_turn_hr, next_turn_min);
+            break;
          default:
             cur_info_no = 1;
             break;
       }
    }
 
+// ########## AYARLAR KISMI ##################
    else {
       if(cur_screen_no != prev_screen || lcd_update) {      
          switch(cur_screen_no)
@@ -274,7 +294,16 @@ void lcd_int() { // Kesme Periyodu = 65ms
                lcd_gotoxy(1,1);
                printf(lcd_putc, "AYARLAR");
                lcd_gotoxy(1,2);
-               printf(lcd_putc, "PERIYOD AYARI");
+               printf(lcd_putc, "PERIYOT: %2u SAAT", motor_period);
+               switch(settings_no){
+                  case 1:
+                     lcd_gotoxy(11,2);
+                     break;
+                  default: 
+                     settings_no = 1;
+                     lcd_gotoxy(11,2);
+                     break;
+               } 
                break;
             case 4:
                lcd_putc("\f");
@@ -332,6 +361,25 @@ void lcd_int() { // Kesme Periyodu = 65ms
    } 
 }
 
+void calculate_period(){
+   next_turn_hr = (time_hour + motor_period) % 24;
+   next_turn_min = time_min;
+  
+  // Eger periyot 24 ise ayni dakikada tekrar dondurme yapmadigindan
+  // emin olmak icin, dakika 1 eksiltilir. 
+   if ( motor_period == 24 ) {  
+      if ( next_turn_min == 0 ){
+         next_turn_min = 59;         
+         if ( next_turn_hr == 0 )
+            next_turn_hr = 23;
+         else
+            next_turn_hr--;
+      }
+      else
+         next_turn_min--;
+   }
+}
+
 void read_cooler_heater() {
    if (temp < temp_ideal - temp_sensivity)
    // SICAKLIK (IDEAL-HASSASIYET) ALTINA DUSERSE, ISITMA EMRI GONDER
@@ -381,7 +429,9 @@ void main ()
    rtc_init();
    delay_ms(20);
    rtc_set_datetime(29,4,14,2,22,54);   // Varsayilan saat ayarlama;
- 
+   
+   calculate_period();
+    
    setup_adc(ADC_CLOCK_INTERNAL);
    setup_adc_ports(AN0);
 
