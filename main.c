@@ -177,6 +177,29 @@ void menu_int() {
          calculate_next_turn();
       }
       
+      // TARIH AYARLAMA MENU && BUTON YUKARI
+      else if ( cur_screen_no == 2 ) {
+         if ( settings_no == 1) {
+            // Gun u arttir
+            date_day++;
+            if ( date_day > 31 )
+               date_day = 1;                        
+         }         
+         else if ( settings_no == 2) {
+            // Ay i Arttir
+            date_mth++;
+            if ( date_mth > 12 )
+               date_mth = 1;                    
+         }
+         else if ( settings_no == 3) {
+            // Yil i Arttir
+            date_year++;
+            if ( date_year > 99 )
+               date_year = 0;                    
+         }
+         set_current_time();
+      }
+      
       // PERIYOT AYARLAMA MENU && BUTON YUKARI
       else if ( cur_screen_no == 3 ) {   
          motor_period++;
@@ -228,6 +251,30 @@ void menu_int() {
          calculate_next_turn();
       }
       
+      // TARIH AYARLAMA MENU && BUTON ASAGI
+      else if ( cur_screen_no == 2 ) {
+         if ( settings_no == 1) {
+            // Gun u azalt
+            date_day--;
+            if ( date_day < 1 )
+               date_day = 31;               
+         }         
+         else if ( settings_no == 2) {
+            // Ay i Azalt
+            date_mth--;
+            if ( date_mth < 1 )
+               date_mth = 12;                    
+         }
+         else if ( settings_no == 3) {
+            // Yil i Azalt            
+            if ( date_year == 0 )
+               date_year = 99;
+            else
+               date_year--;
+         }
+         set_current_time();
+      }
+      
       // PERIYOT AYARLAMA MENU && BUTON ASAGI
       if ( cur_screen_no == 3 ) {   
          motor_period--;
@@ -275,6 +322,27 @@ void menu_int() {
                
             case 2:
                lcd_gotoxy(11,2);            
+               break;
+         }
+      }
+      
+      // TARIH AYARLAMA MENU && CHG BUTTON
+      else if ( cur_screen_no == 2 ) {
+         settings_no++;
+         
+         if ( settings_no > 3 )
+            settings_no = 1;
+            
+         switch(settings_no)
+         {
+            case 1:
+               lcd_gotoxy(9,2);            
+               break;               
+            case 2:
+               lcd_gotoxy(12,2);            
+               break;
+            case 3:
+               lcd_gotoxy(15,2);            
                break;
          }
       }
@@ -377,7 +445,7 @@ void lcd_int() { // Kesme Periyodu = 65ms
                lcd_gotoxy(1,1);
                printf(lcd_putc, "AYARLAR");
                lcd_gotoxy(1,2);
-               printf(lcd_putc, "Saat: %02d:%02d:", time_hour, time_min);
+               printf(lcd_putc, "Saat: %02d:%02d", time_hour, time_min);
                switch(settings_no){
                   case 1:
                      lcd_gotoxy(8,2);
@@ -396,7 +464,22 @@ void lcd_int() { // Kesme Periyodu = 65ms
                lcd_gotoxy(1,1);
                printf(lcd_putc, "AYARLAR");
                lcd_gotoxy(1,2);
-               printf(lcd_putc, "TARIH AYARI");
+               printf(lcd_putc, "Tarih: %02d/%02d/%02d   ", date_day, date_mth, date_year);
+               switch(settings_no){
+                  case 1:
+                     lcd_gotoxy(9,2);
+                     break;
+                  case 2:
+                     lcd_gotoxy(12,2);
+                     break;
+                  case 3:
+                     lcd_gotoxy(15,2);
+                     break;
+                  default: 
+                     settings_no = 1;
+                     lcd_gotoxy(9,2);
+                     break;
+               }      
                break;
             case 3:
                lcd_putc("\f");
