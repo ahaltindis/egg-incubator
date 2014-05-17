@@ -62,8 +62,10 @@ int8 lint_count = 0; // Lcd Kesmesinde olusan kesmeleri sayan degisken
 
 signed int16 motor_cur_step = 0; // Step motorun o anki adimini tutan degisken
 unsigned int8 motor_period = 6;  // Motorun dondurulme periyodu
-unsigned int8 next_turn_hr = 0;
-unsigned int8 next_turn_min = 0;
+unsigned int8 motor_step_count = 50; // Her periyot vaktinde motorun dondurulecegi adim sayisi
+
+unsigned int8 next_turn_hr = 0;  // Bir dahaki motorun dondurulecegi saat
+unsigned int8 next_turn_min = 0; // Bir dahaki motorun dondurulecegi dakika
 
 void calculate_next_turn(){
    next_turn_hr = (time_hour + motor_period) % 24;
@@ -500,21 +502,28 @@ void read_int() { // Kesme Periyodu = 250ms
    // Sicakligi Oku
    temp = ds_read_temp();
    
-   // Eger ana ekranda degilse -> Isitma, Sogutma Oku
-   if ( cur_screen_no == 0 )
+   // Eger isitma sogutma test menusunde degilse -> Isitma, Sogutma Oku
+   if ( cur_screen_no != 5 )
       read_cooler_heater();   
 
-   if ( heater )
    // ISITMA EMRI GELIRSE, LAMBAYI AC, YOKSA KAPAT
+   if ( heater )
       output_high(LAMP_PIN); 
    else
       output_low(LAMP_PIN);
-      
+   
+   // SOGUTMA EMRI GELIRSE, FANI AC, YOKSA KAPAT
    if ( cooler )
-   // SOGUTMA EMRI GELIRSE, FANI AC, YOKSA KAPAT   
       output_high(FAN_PIN);
    else
       output_low(FAN_PIN);
+      
+   // Motorun donus vakti geldiyse, motoru belirtilen adim kadar dondur
+   if ( time_hour == next_turn_hr ) {
+      if ( time_min == next_turn_min ) {
+         motor_move_relative(motor_step_count, 'F');
+      }
+   }
 }
 
 void main ()
