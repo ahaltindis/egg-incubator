@@ -125,6 +125,7 @@ float ds_read_temp() {
 void menu_int() {
 // Basilan butonlari kontrol eden harici RB0 kesmesi
 
+// ############  BUTON MENU UYGULAMALARI ########### //
    if(input(BUTTON_MENU)) {
       cur_screen_no++;     // Her menu butonuna basildiginda ekran no 1 arttir
       
@@ -138,7 +139,9 @@ void menu_int() {
          lcd_send_byte(0, 0x0d);
       }
    }
-   
+// ######### //
+ 
+// ############  BUTON YUKARI UYGULAMALARI ########### //
    if(input(BUTTON_UP) && cur_screen_no > 0) {
    
       // SAAT AYARLAMA MENU && BUTON YUKARI
@@ -189,6 +192,22 @@ void menu_int() {
             motor_period = 1;      
       }
       
+      // TERMOSTAT AYARLARMA MENU && BUTON YUKARI
+      else if ( cur_screen_no == 4) {
+         if ( settings_no == 1) {
+            // Ideal Arttir      
+            temp_ideal++;
+            if ( temp_ideal > 60 ) 
+               temp_ideal = 10;
+         }         
+         else if ( settings_no == 2) {
+            // Hassasiyet Arttir
+            temp_sensivity++;
+            if ( temp_sensivity > 9 )
+               temp_sensivity = 1;
+         }      
+      }
+      
       // HARICI TEST MENU && BUTON YUKARI
       else if ( cur_screen_no == 5 ) {   
          if ( settings_no == 1) {
@@ -210,7 +229,9 @@ void menu_int() {
       if ( cur_info_no > TOTAL_INFO_SCREEN )
          cur_info_no = 1;   
    }
-   
+// ######### //
+
+// ############  BUTON ASAGI UYGULAMALARI ########### //
    if(input(BUTTON_DOWN) && cur_screen_no > 0) {
    
       // SAAT AYARLAMA MENU && BUTON ASAGI
@@ -264,6 +285,22 @@ void menu_int() {
             motor_period = 24;      
       }
       
+      // TERMOSTAT AYARLARMA MENU && BUTON ASAGI
+      else if ( cur_screen_no == 4) {
+         if ( settings_no == 1) {
+            // Ideal Azalt      
+            temp_ideal--;
+            if ( temp_ideal < 10 ) 
+               temp_ideal = 60;
+         }         
+         else if ( settings_no == 2) {
+            // Hassasiyet Azalt
+            temp_sensivity--;
+            if ( temp_sensivity < 1 )
+               temp_sensivity = 9;
+         }      
+      }
+      
       // HARICI TEST MENU && BUTON ASAGI
       else if ( cur_screen_no == 5 ) {   
          if ( settings_no == 1) {
@@ -286,7 +323,9 @@ void menu_int() {
       if ( cur_info_no < 1 )
          cur_info_no = TOTAL_INFO_SCREEN;   
    }
-      
+// ######### //
+
+// ############  BUTON CHG UYGULAMALARI ########### //      
    if(input(BUTTON_CHG) && cur_screen_no > 0) {
    
       // SAAT AYARLAMA MENU && CHG BUTTON
@@ -334,6 +373,25 @@ void menu_int() {
          settings_no = 1;
       }
       
+      // TERMOSTAT AYARLARMA MENU && CHG BUTTON
+      else if ( cur_screen_no == 4) {
+         settings_no++;
+         
+         if ( settings_no > 2 )
+            settings_no = 1;
+            
+         switch(settings_no)
+         {
+            case 1:
+               lcd_gotoxy(9,2);            
+               break;
+               
+            case 2:
+               lcd_gotoxy(16,2);            
+               break;
+         }      
+      }
+      
       // HARICI TEST MENU && CHG BUTTON
       else if ( cur_screen_no == 5 ) {   
           settings_no++;
@@ -364,6 +422,7 @@ void menu_int() {
    {
       lcd_froze = !lcd_froze;
    }
+// ######### //
 }
 
 #INT_TIMER0
@@ -484,7 +543,19 @@ void lcd_int() { // Kesme Periyodu = 65ms
                lcd_gotoxy(1,1);
                printf(lcd_putc, "AYARLAR");
                lcd_gotoxy(1,2);
-               printf(lcd_putc, "TERMOSTAT AYARI");
+               printf(lcd_putc, "IDEAL: %2u   H: %1u", temp_ideal, temp_sensivity);
+               switch(settings_no){
+                  case 1:
+                     lcd_gotoxy(9,2);
+                     break;
+                  case 2:
+                     lcd_gotoxy(16,2);
+                     break;
+                  default: 
+                     settings_no = 1;
+                     lcd_gotoxy(9,2);
+                     break;
+               }              
                break;
             case 5:
                lcd_putc("\f");
