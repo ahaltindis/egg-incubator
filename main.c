@@ -41,8 +41,9 @@
 int8 cur_screen_no = 0; // Aktif olan ekran no, 0-> Ana Ekran  1,2,3,... -> Ayarlar Ekrani
 int8 cur_info_no = 1; // Ana ekranda aktif olan bilgi ekrani no
 
-int8 prev_screen = 0; // Ekran degismedikce ekran yenilenmesi yapmamasi icin onceki menu degeri
-int1 lcd_update = 0; // Lcd yenilenmesi gerekiyor mu? Not: Ayarlardan sonra
+int8 prev_screen = 0;    // Ekran degismedikce ekran yenilenmesi yapmamasi icin onceki menu degeri
+int1 lcd_update = 0;     // Lcd yenilenmesi gerekiyor mu? Not: Ayarlardan sonra
+int1 lcd_froze = 0;      // Lcd ekranda o anki bilgi ekrani dondurulsun mu?
 
 int8 settings_no = 1; // Her bir ayar sekme ekraninda, degistirilebilir bolge sayisi
 
@@ -142,6 +143,12 @@ void menu_int() {
          motor_move_relative(MOTOR_TEST_STEP 'F');
       lcd_update = 1;
    }
+   else if(input(BUTTON_UP) && cur_screen_no == 0)
+   {
+      cur_info_no++;      
+      if ( cur_info_no > TOTAL_INFO_SCREEN )
+         cur_info_no = 1;   
+   }
    
    if(input(BUTTON_DOWN) && cur_screen_no > 0) {
       if ( cur_screen_no == 5 ) {   // LCD TEST MENU
@@ -156,6 +163,12 @@ void menu_int() {
       else if ( cur_screen_no == 6 )   // MOTOR TEST MENU
          motor_move_relative(MOTOR_TEST_STEP 'B');
       lcd_update = 1;
+   }
+   else if(input(BUTTON_DOWN) && cur_screen_no == 0)
+   {      
+      cur_info_no--;      
+      if ( cur_info_no < 1 )
+         cur_info_no = TOTAL_INFO_SCREEN;   
    }
       
    if(input(BUTTON_CHG) && cur_screen_no > 0) {
@@ -183,23 +196,36 @@ void menu_int() {
          lcd_update = 1;
       }
    }
+   else if(input(BUTTON_CHG) && cur_screen_no == 0)
+   {
+      lcd_froze = !lcd_froze;
+
+ 
+   }
 }
 
 #INT_TIMER0
 void lcd_int() { // Kesme Periyodu = 65ms
+// LCD Ekrandaki yazilari gosteren kesme fonksiyonu
    set_timer0(0);   
    lint_count++;
    
    if (lint_count == MAIN_SCREEN_WAIT ) {
       lint_count = 0;
-      cur_info_no++;      
+      if ( lcd_froze == 0 )
+         cur_info_no++;      
       if ( cur_info_no > TOTAL_INFO_SCREEN )
          cur_info_no = 1;
    }
    
    if ( cur_screen_no == 0 ) {
-      lcd_gotoxy(1,1);      
-      printf(lcd_putc, "KULUCKA MAKINESI  ");
+      lcd_gotoxy(1,1);
+      if (lcd_froze){        
+         printf(lcd_putc, " # DONDURULDU #      ");      
+      }
+      else {         
+         printf(lcd_putc, "KULUCKA MAKINESI      ");      
+      }     
       
       switch(cur_info_no)
       {
@@ -217,14 +243,10 @@ void lcd_int() { // Kesme Periyodu = 65ms
             break;
          case 4:
             lcd_gotoxy(1,2);
-            printf(lcd_putc, "ISIK: %1u   FAN: %1u     ", heater, cooler);
+            printf(lcd_putc, "ISITMA: %1u FAN: %1u     ", heater, cooler);
             break;
          default:
-            lcd_putc("\f");
-            lcd_gotoxy(1,1);
-            printf(lcd_putc, "!!! HATA - GOSTERIM !!!");
-            lcd_gotoxy(1,2);
-            printf(lcd_putc, "                            ");
+            cur_info_no = 1;
             break;
       }
    }
