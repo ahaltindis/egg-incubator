@@ -86,24 +86,6 @@ void calculate_next_turn(){
    }
 }
 
-void motor_move_nth(int8 step) {
-   step = step % 200;           
-   if ( step > motor_cur_step ) {   
-      while( motor_cur_step < step ) {
-         motor_cur_step++;               
-         drive_stepper(MOTOR_STEPS_INTERVAL, 'F', 1);         
-      }   
-   }
-   else if ( step < motor_cur_step ) {
-      while( motor_cur_step > 0 ) {
-         motor_cur_step--;
-         drive_stepper(MOTOR_STEPS_INTERVAL, 'B', 1);
-      }   
-   }
-   else
-      return;
-}
-
 void motor_move_relative(int8 step, char dir) {
    if ( dir == 'F' ) {
       for( int i = 0; i < step; i++ ) {
