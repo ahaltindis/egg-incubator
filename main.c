@@ -122,6 +122,10 @@ void motor_move_relative(int8 step, char dir) {
    }
 }
 
+void set_current_time() {
+   rtc_set_datetime(date_day, date_mth, date_year, date_dow, time_hour, time_min);
+}
+
 float ds_read_temp() {
 // Sicaklik okuma fonksiyonu   
    unsigned long int ds_raw;
@@ -167,6 +171,7 @@ void menu_int() {
             if ( time_min > 59 )
                time_min = 0;                    
          }
+         set_current_time();
          calculate_next_turn();
       }
       
@@ -217,6 +222,7 @@ void menu_int() {
             else
                time_min--;                                
          }
+         set_current_time();
          calculate_next_turn();
       }
       
@@ -481,9 +487,15 @@ void read_cooler_heater() {
 #INT_TIMER1
 void read_int() { // Kesme Periyodu = 250ms
 
-   // Saati Oku
-   rtc_get_time(time_hour, time_min, time_sec);
-   rtc_get_date(date_day, date_mth, date_year, date_dow);
+   // Saat degistirme ayarinda degilse -> Saati Oku
+   if ( cur_screen_no != 1 ) {
+      rtc_get_time(time_hour, time_min, time_sec);
+   }
+   
+   // Tarih degistirme ayarinda degilse -> Tarihi Oku
+   else if ( cur_screen_no != 2 ) {
+      rtc_get_date(date_day, date_mth, date_year, date_dow);
+   }
    
    // Sicakligi Oku
    temp = ds_read_temp();
