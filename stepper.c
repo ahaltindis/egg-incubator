@@ -27,7 +27,7 @@ void drive_stepper(BYTE speed, char dir, BYTE steps) {
       delay_ms(speed);
       set_tris_b(0x0f);
       port_b = POSITIONS[ stepper_state ] << 4;
-      if(dir!='R')
+      if(dir!='B')
          stepper_state=(stepper_state+1)&(sizeof(POSITIONS)-1);
       else
          stepper_state=(stepper_state-1)&(sizeof(POSITIONS)-1);

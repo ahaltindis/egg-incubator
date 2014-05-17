@@ -30,9 +30,12 @@
 #define LAMP_PIN      PIN_C4
 #define FAN_PIN       PIN_C5
 
-#define TOTAL_SETUP_SCREEN 5  // Ayarlar kisminda gezilecek ayar sekmesi sayisi
+#define TOTAL_SETUP_SCREEN 6  // Ayarlar kisminda gezilecek ayar sekmesi sayisi
 #define TOTAL_INFO_SCREEN 4   // Sirayla gosterilecek bilgi ekran sayisi
 #define MAIN_SCREEN_WAIT 77 // Her ekranin gosterilme suresi Hesap: 77*65ms = 5sn
+
+#define MOTOR_STEPS_INTERVAL 15 // Her adim arasinda beklenilecek sure -> motor hizini belirler.
+#define MOTOR_MAX_STEPS 200   // Motorun tam bir tur icin gerekli adim sayisi
 
 int8 cur_screen_no = 0; // Aktif olan ekran no, 0-> Ana Ekran  1,2,3,... -> Ayarlar Ekrani
 int8 cur_info_no = 1; // Ana ekranda aktif olan bilgi ekrani no
@@ -54,6 +57,46 @@ int8 temp_ideal = 30;    // Kutunun icerisinin ideal sicakligi
 int8 temp_sensivity = 5;   // Sicakliga karsi duyarlilik
 
 int8 lint_count = 0; // Lcd Kesmesinde olusan kesmeleri sayan degisken
+
+signed int16 motor_cur_step = 0; // Step motorun o anki adimini tutan degisken
+
+void motor_move_nth(int8 step) {
+   step = step % 200;           
+   if ( step > motor_cur_step ) {   
+      while( motor_cur_step < step ) {
+         motor_cur_step++;               
+         drive_stepper(MOTOR_STEPS_INTERVAL, 'F', 1);         
+      }   
+   }
+   else if ( step < motor_cur_step ) {
+      while( motor_cur_step > 0 ) {
+         motor_cur_step--;
+         drive_stepper(MOTOR_STEPS_INTERVAL, 'B', 1);
+      }   
+   }
+   else
+      return;
+}
+
+void motor_move_relative(int8 step, char dir) {
+   if ( dir == 'F' ) {
+      for( int i = 0; i < step; i++ ) {
+         motor_cur_step++;
+         if ( motor_cur_step >= 200 )
+            motor_cur_step = 0;            
+         drive_stepper(MOTOR_STEPS_INTERVAL, 'F', 1);
+      }
+   }
+   else
+   {
+      for( int i = 0; i < step; i++ ) {
+         motor_cur_step--;
+         if ( motor_cur_step < 0 )
+            motor_cur_step = 199;            
+         drive_stepper(MOTOR_STEPS_INTERVAL, 'B', 1);
+      }   
+   }
+}
 
 float ds_read_temp() {
 // Sicaklik okuma fonksiyonu   
@@ -85,7 +128,7 @@ void menu_int() {
    }
 
    if(input(BUTTON_UP) && cur_screen_no > 0) {
-      if ( cur_screen_no == 5 ) {
+      if ( cur_screen_no == 5 ) {   // LCD TEST MENU
          if ( settings_no == 1) {
             heater = !heater;            
          }
@@ -94,11 +137,13 @@ void menu_int() {
             cooler = !cooler;         
          }
       }
+      else if ( cur_screen_no == 6 )   // MOTOR TEST MENU
+         motor_move_relative(10, 'F');
       lcd_update = 1;
    }
    
    if(input(BUTTON_DOWN) && cur_screen_no > 0) {
-      if ( cur_screen_no == 5 ) {
+      if ( cur_screen_no == 5 ) {   // LCD TEST MENU
          if ( settings_no == 1) {
             heater = !heater;            
          }
@@ -107,6 +152,8 @@ void menu_int() {
             cooler = !cooler;         
          }
       }
+      else if ( cur_screen_no == 6 )   // MOTOR TEST MENU
+         motor_move_relative(10, 'B');
       lcd_update = 1;
    }
       
@@ -128,6 +175,9 @@ void menu_int() {
                lcd_gotoxy(16,2);            
                break;
          }
+      }
+      else if ( cur_screen_no == 6 ) {
+         settings_no = 1;
       }
    }
 }
@@ -221,8 +271,28 @@ void lcd_int() { // Kesme Periyodu = 65ms
                   case 2:
                      lcd_gotoxy(16,2);
                      break;
+                  default: 
+                     settings_no = 1;
+                     lcd_gotoxy(7,2);
+                     break;
                }               
-               break;            
+               break;       
+            case 6:
+               lcd_putc("\f");
+               lcd_gotoxy(1,1);
+               printf(lcd_putc, "TEST");
+               lcd_gotoxy(1,2);
+               printf(lcd_putc, "MOTOR: %3Ld", motor_cur_step );
+               switch(settings_no){
+                  case 1:
+                     lcd_gotoxy(11,2);
+                     break;
+                  default: 
+                     settings_no = 1;
+                     lcd_gotoxy(11,2);
+                     break;
+               }               
+               break;               
             default:
                lcd_putc("\f");
                lcd_gotoxy(1,1);
