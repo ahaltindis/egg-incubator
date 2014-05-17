@@ -61,9 +61,28 @@ int8 temp_sensivity = 5;   // Sicakliga karsi duyarlilik
 int8 lint_count = 0; // Lcd Kesmesinde olusan kesmeleri sayan degisken
 
 signed int16 motor_cur_step = 0; // Step motorun o anki adimini tutan degisken
-int8 motor_period = 6;  // Motorun dondurulme periyodu
+unsigned int8 motor_period = 6;  // Motorun dondurulme periyodu
 unsigned int8 next_turn_hr = 0;
 unsigned int8 next_turn_min = 0;
+
+void calculate_next_turn(){
+   next_turn_hr = (time_hour + motor_period) % 24;
+   next_turn_min = time_min;
+  
+  // Eger periyot 24 ise ayni dakikada tekrar dondurme yapmadigindan
+  // emin olmak icin, dakika 1 eksiltilir. 
+   if ( motor_period == 24 ) {  
+      if ( next_turn_min == 0 ){
+         next_turn_min = 59;         
+         if ( next_turn_hr == 0 )
+            next_turn_hr = 23;
+         else
+            next_turn_hr--;
+      }
+      else
+         next_turn_min--;
+   }
+}
 
 void motor_move_nth(int8 step) {
    step = step % 200;           
@@ -133,12 +152,33 @@ void menu_int() {
    }
    
    if(input(BUTTON_UP) && cur_screen_no > 0) {
-      if ( cur_screen_no == 3 ) {   // PERIYOT AYARLAMA MENU
+   
+      // SAAT AYARLAMA MENU && BUTON YUKARI
+      if ( cur_screen_no == 1 ) {
+         if ( settings_no == 1) {
+            // Saati Arttir
+            time_hour++;
+            if ( time_hour > 23 )
+               time_hour = 0;                        
+         }         
+         else if ( settings_no == 2) {
+            // Dakikayi Arttir
+            time_min++;
+            if ( time_min > 59 )
+               time_min = 0;                    
+         }
+         calculate_next_turn();
+      }
+      
+      // PERIYOT AYARLAMA MENU && BUTON YUKARI
+      else if ( cur_screen_no == 3 ) {   
          motor_period++;
          if ( motor_period > 24 )
             motor_period = 1;      
       }
-      else if ( cur_screen_no == 5 ) {   // HARICI TEST MENU
+      
+      // HARICI TEST MENU && BUTON YUKARI
+      else if ( cur_screen_no == 5 ) {   
          if ( settings_no == 1) {
             heater = !heater;            
          }         
@@ -146,7 +186,9 @@ void menu_int() {
             cooler = !cooler;         
          }
       }
-      else if ( cur_screen_no == 6 )   // MOTOR TEST MENU
+      
+      // MOTOR TEST MENU && BUTON YUKARI
+      else if ( cur_screen_no == 6 )  
          motor_move_relative(MOTOR_TEST_STEP 'F');
       lcd_update = 1;
    }
@@ -158,12 +200,35 @@ void menu_int() {
    }
    
    if(input(BUTTON_DOWN) && cur_screen_no > 0) {
-      if ( cur_screen_no == 3 ) {   // PERIYOT AYARLAMA MENU
+   
+      // SAAT AYARLAMA MENU && BUTON ASAGI
+      if ( cur_screen_no == 1 ) {
+         if ( settings_no == 1) {
+            // Saati Azalt
+            if ( time_hour == 0 )
+               time_hour = 23;
+            else
+               time_hour--;
+         }         
+         else if ( settings_no == 2) {
+            // Dakikayi Azalt
+            if ( time_min == 0 )
+               time_min = 59;
+            else
+               time_min--;                                
+         }
+         calculate_next_turn();
+      }
+      
+      // PERIYOT AYARLAMA MENU && BUTON ASAGI
+      if ( cur_screen_no == 3 ) {   
          motor_period--;
          if ( motor_period ==  0 )
             motor_period = 24;      
       }
-      else if ( cur_screen_no == 5 ) {   // HARICI TEST MENU
+      
+      // HARICI TEST MENU && BUTON ASAGI
+      else if ( cur_screen_no == 5 ) {   
          if ( settings_no == 1) {
             heater = !heater;            
          }
@@ -172,10 +237,12 @@ void menu_int() {
             cooler = !cooler;         
          }
       }
-      else if ( cur_screen_no == 6 )   // MOTOR TEST MENU
+      
+      // MOTOR TEST MENU && BUTON ASAGI
+      else if ( cur_screen_no == 6 )   
          motor_move_relative(MOTOR_TEST_STEP 'B');
       lcd_update = 1;
-   }
+   }   
    else if(input(BUTTON_DOWN) && cur_screen_no == 0)
    {      
       cur_info_no--;      
@@ -184,11 +251,33 @@ void menu_int() {
    }
       
    if(input(BUTTON_CHG) && cur_screen_no > 0) {
-      if ( cur_screen_no == 3 ) {   // PERIYOT AYARLAMA MENU
+   
+      // SAAT AYARLAMA MENU && CHG BUTTON
+      if ( cur_screen_no == 1 ) {
+         settings_no++;
+         
+         if ( settings_no > 2 )
+            settings_no = 1;
+            
+         switch(settings_no)
+         {
+            case 1:
+               lcd_gotoxy(8,2);            
+               break;
+               
+            case 2:
+               lcd_gotoxy(11,2);            
+               break;
+         }
+      }
+      
+      // PERIYOT AYARLAMA MENU && CHG BUTTON
+      else if ( cur_screen_no == 3 ) {   
          settings_no = 1;
       }
-      if ( cur_screen_no == 5 ) {   // HARICI TEST MENU
-        // TEST isitici, sogutucu
+      
+      // HARICI TEST MENU && CHG BUTTON
+      else if ( cur_screen_no == 5 ) {   
           settings_no++;
          
          if ( settings_no > 2 )
@@ -205,7 +294,9 @@ void menu_int() {
                break;
          }
       }
-      else if ( cur_screen_no == 6 ) { // MOTOR TEST MENU
+      
+      // MOTOR TEST MENU && CHG BUTTON
+      else if ( cur_screen_no == 6 ) { 
          settings_no = 1;
          motor_cur_step = 0;
          lcd_update = 1;
@@ -214,8 +305,6 @@ void menu_int() {
    else if(input(BUTTON_CHG) && cur_screen_no == 0)
    {
       lcd_froze = !lcd_froze;
-
- 
    }
 }
 
@@ -280,7 +369,19 @@ void lcd_int() { // Kesme Periyodu = 65ms
                lcd_gotoxy(1,1);
                printf(lcd_putc, "AYARLAR");
                lcd_gotoxy(1,2);
-               printf(lcd_putc, "SAAT AYARI");
+               printf(lcd_putc, "Saat: %02d:%02d:", time_hour, time_min);
+               switch(settings_no){
+                  case 1:
+                     lcd_gotoxy(8,2);
+                     break;
+                  case 2:
+                     lcd_gotoxy(11,2);
+                     break;
+                  default: 
+                     settings_no = 1;
+                     lcd_gotoxy(8,2);
+                     break;
+               }        
                break;
             case 2:
                lcd_putc("\f");
@@ -361,25 +462,6 @@ void lcd_int() { // Kesme Periyodu = 65ms
    } 
 }
 
-void calculate_period(){
-   next_turn_hr = (time_hour + motor_period) % 24;
-   next_turn_min = time_min;
-  
-  // Eger periyot 24 ise ayni dakikada tekrar dondurme yapmadigindan
-  // emin olmak icin, dakika 1 eksiltilir. 
-   if ( motor_period == 24 ) {  
-      if ( next_turn_min == 0 ){
-         next_turn_min = 59;         
-         if ( next_turn_hr == 0 )
-            next_turn_hr = 23;
-         else
-            next_turn_hr--;
-      }
-      else
-         next_turn_min--;
-   }
-}
-
 void read_cooler_heater() {
    if (temp < temp_ideal - temp_sensivity)
    // SICAKLIK (IDEAL-HASSASIYET) ALTINA DUSERSE, ISITMA EMRI GONDER
@@ -429,9 +511,7 @@ void main ()
    rtc_init();
    delay_ms(20);
    rtc_set_datetime(29,4,14,2,22,54);   // Varsayilan saat ayarlama;
-   
-   calculate_period();
-    
+     
    setup_adc(ADC_CLOCK_INTERNAL);
    setup_adc_ports(AN0);
 
@@ -439,6 +519,8 @@ void main ()
    
    set_adc_channel(0);
    delay_us(20);
+   
+   calculate_next_turn();
    
    setup_timer_0(RTCC_INTERNAL | RTCC_DIV_256); // timer0
    setup_timer_1(T1_INTERNAL | T1_DIV_BY_8); // timer1
@@ -448,6 +530,6 @@ void main ()
    enable_interrupts(INT_TIMER0);
    enable_interrupts(INT_TIMER1);
    enable_interrupts(GLOBAL);
-    
+ 
    while(TRUE);
 }
