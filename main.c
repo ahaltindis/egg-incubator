@@ -36,6 +36,7 @@
 
 #define MOTOR_STEPS_INTERVAL 15 // Her adim arasinda beklenilecek sure -> motor hizini belirler.
 #define MOTOR_MAX_STEPS 200   // Motorun tam bir tur icin gerekli adim sayisi
+#define MOTOR_TEST_STEP 5     // Test modunda motorun her seferinde atacagi adim.
 
 int8 cur_screen_no = 0; // Aktif olan ekran no, 0-> Ana Ekran  1,2,3,... -> Ayarlar Ekrani
 int8 cur_info_no = 1; // Ana ekranda aktif olan bilgi ekrani no
@@ -138,7 +139,7 @@ void menu_int() {
          }
       }
       else if ( cur_screen_no == 6 )   // MOTOR TEST MENU
-         motor_move_relative(10, 'F');
+         motor_move_relative(MOTOR_TEST_STEP 'F');
       lcd_update = 1;
    }
    
@@ -153,7 +154,7 @@ void menu_int() {
          }
       }
       else if ( cur_screen_no == 6 )   // MOTOR TEST MENU
-         motor_move_relative(10, 'B');
+         motor_move_relative(MOTOR_TEST_STEP 'B');
       lcd_update = 1;
    }
       
@@ -178,6 +179,8 @@ void menu_int() {
       }
       else if ( cur_screen_no == 6 ) {
          settings_no = 1;
+         motor_cur_step = 0;
+         lcd_update = 1;
       }
    }
 }
@@ -261,7 +264,7 @@ void lcd_int() { // Kesme Periyodu = 65ms
             case 5:
                lcd_putc("\f");
                lcd_gotoxy(1,1);
-               printf(lcd_putc, "TEST");
+               printf(lcd_putc, "HARICI TEST");
                lcd_gotoxy(1,2);
                printf(lcd_putc, "ISIT: %u SOGUT: %u", heater, cooler);
                switch(settings_no){
@@ -280,16 +283,16 @@ void lcd_int() { // Kesme Periyodu = 65ms
             case 6:
                lcd_putc("\f");
                lcd_gotoxy(1,1);
-               printf(lcd_putc, "TEST");
+               printf(lcd_putc, "ADIMI SIFIRLA :)");
                lcd_gotoxy(1,2);
-               printf(lcd_putc, "MOTOR: %3Ld", motor_cur_step );
+               printf(lcd_putc, "ADIM: %3Ld -> CHG", motor_cur_step );
                switch(settings_no){
                   case 1:
-                     lcd_gotoxy(11,2);
+                     lcd_gotoxy(9,2);
                      break;
                   default: 
                      settings_no = 1;
-                     lcd_gotoxy(11,2);
+                     lcd_gotoxy(9,2);
                      break;
                }               
                break;               
