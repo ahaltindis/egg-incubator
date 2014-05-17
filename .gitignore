@@ -30,3 +30,6 @@
 *.i*86
 *.x86_64
 *.hex
+
+__history/
+__history/*
