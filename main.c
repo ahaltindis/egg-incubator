@@ -30,6 +30,8 @@
 #define LAMP_PIN      PIN_C4
 #define FAN_PIN       PIN_C5
 
+#define MOTOR_ENABLE  PIN_C7
+
 #define TOTAL_SETUP_SCREEN 6  // Ayarlar kisminda gezilecek ayar sekmesi sayisi
 #define TOTAL_INFO_SCREEN 5   // Sirayla gosterilecek bilgi ekran sayisi
 #define MAIN_SCREEN_WAIT 77 // Her ekranin gosterilme suresi Hesap: 77*65ms = 5sn
@@ -97,6 +99,8 @@ void calculate_next_turn(){
 }
 
 void motor_move_relative(int8 step, char dir) {
+   output_high(MOTOR_ENABLE);
+   
    if ( dir == 'F' ) {
       for( int i = 0; i < step; i++ ) {
          motor_cur_step++;
@@ -114,7 +118,8 @@ void motor_move_relative(int8 step, char dir) {
             motor_cur_step--;
          drive_stepper(MOTOR_STEPS_INTERVAL, 'B', 1);
       }   
-   }   
+   }
+   output_low(MOTOR_ENABLE);
    update_eeprom = 1;
 }
 
@@ -726,6 +731,8 @@ void main ()
    set_tris_a(0x1E);
       
    get_from_eeprom();
+   
+   output_low(MOTOR_ENABLE); // Acilista motoru kapat
       
    setup_timer_0(RTCC_INTERNAL | RTCC_DIV_256); // timer0
    setup_timer_1(T1_INTERNAL | T1_DIV_BY_8); // timer1
