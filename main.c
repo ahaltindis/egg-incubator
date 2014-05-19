@@ -7,7 +7,7 @@
 #include <16f877a.h>
 //#device ADC=10
 
-#fuses HS,NOWDT,NOPROTECT,NOBROWNOUT,NOLVP
+#fuses HS,NOWDT,NOPROTECT,NOBROWNOUT,NOLVP,NOCPD
 #use delay(clock = 4000000)
 #use fast_io(a)
 
@@ -20,7 +20,7 @@
 
 #include <lcd.c>
 #include <ds1302.c>
-#include <ds18b20.c>
+//#include <ds18b20.c>
 #include <stepper.c>
 
 #define BUTTON_MENU   PIN_A1
@@ -667,7 +667,7 @@ void read_int() { // Kesme Periyodu = 250ms
    
    // Sicakligi Oku
    //temp = ds_read_temp();
-   temp = ds1820_read();
+   //temp = ds1820_read();
    
    // Eger isitma sogutma test menusunde degilse -> Isitma, Sogutma Oku
    if ( cur_screen_no != 5 )
@@ -710,7 +710,7 @@ void get_from_eeprom() {
    next_turn_min = read_eeprom(3);
    
    if ( next_turn_hr == 0xFF )
-      next_turn_hr = 0;
+      next_turn_hr = 23;
    
    if ( next_turn_min == 0xFF )
       next_turn_min = 0;   
@@ -730,6 +730,10 @@ void get_from_eeprom() {
 
 void main ()
 {
+   setup_psp(PSP_DISABLED);
+   setup_adc(ADC_OFF);
+   setup_adc_ports(NO_ANALOGS);
+   
    lcd_init(); 
    rtc_init();
    delay_ms(20);
@@ -738,7 +742,7 @@ void main ()
    //setup_adc(ADC_CLOCK_INTERNAL);
    //setup_adc_ports(AN0);
 
-   set_tris_a(0x1F);
+   set_tris_a(0x1E);
    
    //set_adc_channel(0);
    //delay_us(20);
