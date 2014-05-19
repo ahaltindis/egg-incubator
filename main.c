@@ -55,17 +55,25 @@ float temp;    // Sicaklik degerini tutan degisken
 int1 heater = 0;   // Isitma durum degiskeni
 int1 cooler = 0;   // Sogutma durum degiskeni
 
-int8 temp_ideal = 30;    // Kutunun icerisinin ideal sicakligi
-int8 temp_sensivity = 5;   // Sicakliga karsi duyarlilik
-
 int8 lint_count = 0; // Lcd Kesmesinde olusan kesmeleri sayan degisken
 
-signed int16 motor_cur_step = 0; // Step motorun o anki adimini tutan degisken
-unsigned int8 motor_period = 6;  // Motorun dondurulme periyodu
 unsigned int8 motor_step_count = 50; // Her periyot vaktinde motorun dondurulecegi adim sayisi
 
-unsigned int8 next_turn_hr = 0;  // Bir dahaki motorun dondurulecegi saat
-unsigned int8 next_turn_min = 0; // Bir dahaki motorun dondurulecegi dakika
+// ###### EEPROM da saklanan degiskenler ########
+
+int8 motor_period;  // Motorun dondurulme periyodu
+
+int8 motor_cur_step; // Step motorun o anki adimini tutan degisken
+
+int8 next_turn_hr;  // Bir dahaki motorun dondurulecegi saat
+int8 next_turn_min; // Bir dahaki motorun dondurulecegi dakika
+
+int8 temp_ideal;    // Kutunun icerisinin ideal sicakligi
+int8 temp_sensivity;   // Sicakliga karsi duyarlilik
+
+
+// #################################
+
 
 void calculate_next_turn(){
    next_turn_hr = (time_hour + motor_period) % 24;
@@ -97,10 +105,11 @@ void motor_move_relative(int8 step, char dir) {
    }
    else
    {
-      for( int i = 0; i < step; i++ ) {
-         motor_cur_step--;
-         if ( motor_cur_step < 0 )
-            motor_cur_step = 199;            
+      for( int i = 0; i < step; i++ ) {         
+         if ( motor_cur_step == 0 )
+            motor_cur_step = 199;      
+         else
+            motor_cur_step--;
          drive_stepper(MOTOR_STEPS_INTERVAL, 'B', 1);
       }   
    }
@@ -581,7 +590,7 @@ void lcd_int() { // Kesme Periyodu = 65ms
                lcd_gotoxy(1,1);
                printf(lcd_putc, "ADIMI SIFIRLA :)");
                lcd_gotoxy(1,2);
-               printf(lcd_putc, "ADIM: %3Ld -> CHG", motor_cur_step );
+               printf(lcd_putc, "ADIM: %3u -> CHG", motor_cur_step );
                switch(settings_no){
                   case 1:
                      lcd_gotoxy(9,2);
@@ -606,7 +615,7 @@ void lcd_int() { // Kesme Periyodu = 65ms
    } 
 }
 
-void read_cooler_heater() {
+void calc_cooler_heater() {
    if (temp < temp_ideal - temp_sensivity)
    // SICAKLIK (IDEAL-HASSASIYET) ALTINA DUSERSE, ISITMA EMRI GONDER
       heater = 1;
@@ -640,7 +649,7 @@ void read_int() { // Kesme Periyodu = 250ms
    
    // Eger isitma sogutma test menusunde degilse -> Isitma, Sogutma Oku
    if ( cur_screen_no != 5 )
-      read_cooler_heater();   
+      calc_cooler_heater();   
 
    // ISITMA EMRI GELIRSE, LAMBAYI AC, YOKSA KAPAT
    if ( heater )
@@ -662,12 +671,45 @@ void read_int() { // Kesme Periyodu = 250ms
    }
 }
 
+// PIC elektrik kesintisinde onceki bilgileri eeprom hafizasindan getirir.
+void get_from_eeprom() { 
+   // Periyod degerini getir
+   motor_period = read_eeprom(0);
+   if ( motor_period == 0xFF )   
+      motor_period = 6;
+      
+   // Motorun adimini getir 
+   motor_cur_step = read_eeprom(1);
+   if ( motor_cur_step == 0xFF )
+      motor_cur_step = 0;
+      
+   // Gelecek dondurme surelerini getir. ( saat / dakika )
+   next_turn_hr = read_eeprom(2);
+   next_turn_min = read_eeprom(3);
+   
+   if ( next_turn_hr == 0xFF )
+      next_turn_hr = 0;
+   
+   if ( next_turn_min == 0xFF )
+      next_turn_min = 0;   
+   
+   // Sicaklik Ideal ve Hassasiyet getir ( ideal / sensivity )
+   temp_ideal = read_eeprom(4);
+   temp_sensivity = read_eeprom(5);
+   
+   if ( temp_ideal == 0xFF )
+      temp_ideal = 30;
+      
+   if ( temp_sensivity == 0xFF )
+      temp_sensivity = 5;
+}
+
 void main ()
 {
    lcd_init(); 
    rtc_init();
    delay_ms(20);
-   rtc_set_datetime(29,4,14,2,22,54);   // Varsayilan saat ayarlama;
+   //rtc_set_datetime(29,4,14,2,22,54);   // Varsayilan saat ayarlama;
      
    setup_adc(ADC_CLOCK_INTERNAL);
    setup_adc_ports(AN0);
@@ -677,6 +719,7 @@ void main ()
    set_adc_channel(0);
    delay_us(20);
    
+   get_from_eeprom();
    calculate_next_turn();
    
    setup_timer_0(RTCC_INTERNAL | RTCC_DIV_256); // timer0
