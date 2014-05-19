@@ -76,7 +76,6 @@ int8 temp_sensivity;   // Sicakliga karsi duyarlilik
 
 // #################################
 
-
 void calculate_next_turn(){
    next_turn_hr = (time_hour + motor_period) % 24;
    next_turn_min = time_min;
@@ -668,6 +667,7 @@ void read_int() { // Kesme Periyodu = 250ms
    
    // Sicakligi Oku
    //temp = ds_read_temp();
+   temp = ds1820_read();
    
    // Eger isitma sogutma test menusunde degilse -> Isitma, Sogutma Oku
    if ( cur_screen_no != 5 )
