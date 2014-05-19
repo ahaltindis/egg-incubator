@@ -92,6 +92,8 @@ void calculate_next_turn(){
       else
          next_turn_min--;
    }
+   write_eeprom(2, next_turn_hr);
+   write_eeprom(3, next_turn_min);   
 }
 
 void motor_move_relative(int8 step, char dir) {
@@ -113,6 +115,7 @@ void motor_move_relative(int8 step, char dir) {
          drive_stepper(MOTOR_STEPS_INTERVAL, 'B', 1);
       }   
    }
+   write_eeprom(1, motor_cur_step);
 }
 
 void set_current_time() {
@@ -198,7 +201,8 @@ void menu_int() {
       else if ( cur_screen_no == 3 ) {   
          motor_period++;
          if ( motor_period > 24 )
-            motor_period = 1;      
+            motor_period = 1;  
+         write_eeprom(0, motor_period);
       }
       
       // TERMOSTAT AYARLARMA MENU && BUTON YUKARI
@@ -208,13 +212,15 @@ void menu_int() {
             temp_ideal++;
             if ( temp_ideal > 60 ) 
                temp_ideal = 10;
+            write_eeprom(4, temp_ideal);
          }         
          else if ( settings_no == 2) {
             // Hassasiyet Arttir
             temp_sensivity++;
             if ( temp_sensivity > 9 )
                temp_sensivity = 1;
-         }      
+            write_eeprom(5, temp_sensivity);
+         }
       }
       
       // HARICI TEST MENU && BUTON YUKARI
@@ -291,7 +297,8 @@ void menu_int() {
       if ( cur_screen_no == 3 ) {   
          motor_period--;
          if ( motor_period ==  0 )
-            motor_period = 24;      
+            motor_period = 24;    
+         write_eeprom(0, motor_period);
       }
       
       // TERMOSTAT AYARLARMA MENU && BUTON ASAGI
@@ -301,12 +308,14 @@ void menu_int() {
             temp_ideal--;
             if ( temp_ideal < 10 ) 
                temp_ideal = 60;
+            write_eeprom(4, temp_ideal);
          }         
          else if ( settings_no == 2) {
             // Hassasiyet Azalt
             temp_sensivity--;
             if ( temp_sensivity < 1 )
                temp_sensivity = 9;
+            write_eeprom(5, temp_sensivity);
          }      
       }
       
@@ -425,6 +434,7 @@ void menu_int() {
          settings_no = 1;
          motor_cur_step = 0;
          lcd_update = 1;
+         write_eeprom(1, motor_cur_step);
       }
    }
    else if(input(BUTTON_CHG) && cur_screen_no == 0)
