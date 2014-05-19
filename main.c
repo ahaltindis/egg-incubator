@@ -58,12 +58,14 @@ int1 cooler = 0;   // Sogutma durum degiskeni
 int8 lint_count = 0; // Lcd Kesmesinde olusan kesmeleri sayan degisken
 int1 update_eeprom = 0;
 
+int1 is_motor_turned = 0;
+int8 motor_turned_min = 0;
+
 unsigned int8 motor_step_count = 50; // Her periyot vaktinde motorun dondurulecegi adim sayisi
 
 // ###### EEPROM da saklanan degiskenler ########
 
 int8 motor_period;  // Motorun dondurulme periyodu
-
 int8 motor_cur_step; // Step motorun o anki adimini tutan degisken
 
 int8 next_turn_hr;  // Bir dahaki motorun dondurulecegi saat
@@ -641,6 +643,9 @@ void read_int() { // Kesme Periyodu = 250ms
       rtc_get_date(date_day, date_mth, date_year, date_dow);
    }
    
+   if ( is_motor_turned && motor_turned_min != time_min )
+      is_motor_turned = 0;
+   
    // Sicakligi Oku   
    temp = ds1820_read();
    
@@ -662,8 +667,13 @@ void read_int() { // Kesme Periyodu = 250ms
       
    // Motorun donus vakti geldiyse, motoru belirtilen adim kadar dondur
    if ( time_hour == next_turn_hr ) {
-      if ( time_min == next_turn_min ) {
+      if ( time_min == next_turn_min && is_motor_turned == 0 ) {
          motor_move_relative(motor_step_count, 'F');
+         
+         is_motor_turned = 1;         
+         motor_turned_min = time_min;
+         
+         calculate_next_turn();
       }
    }
 }
