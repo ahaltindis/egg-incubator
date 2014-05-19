@@ -5,7 +5,6 @@
 //########################//
 
 #include <16f877a.h>
-//#device ADC=10
 
 #fuses HS,NOWDT,NOPROTECT,NOBROWNOUT,NOLVP,NOCPD
 #use delay(clock = 4000000)
@@ -20,7 +19,7 @@
 
 #include <lcd.c>
 #include <ds1302.c>
-//#include <ds18b20.c>
+#include <ds18b20.c>
 #include <stepper.c>
 
 #define BUTTON_MENU   PIN_A1
@@ -73,7 +72,6 @@ int8 next_turn_min; // Bir dahaki motorun dondurulecegi dakika
 int8 temp_ideal;    // Kutunun icerisinin ideal sicakligi
 int8 temp_sensivity;   // Sicakliga karsi duyarlilik
 
-
 // #################################
 
 void calculate_next_turn(){
@@ -93,9 +91,7 @@ void calculate_next_turn(){
       else
          next_turn_min--;
    }
-   update_eeprom = 1;
-   //write_eeprom(2, next_turn_hr);
-   //write_eeprom(3, next_turn_min);   
+   update_eeprom = 1;   
 }
 
 void motor_move_relative(int8 step, char dir) {
@@ -116,26 +112,13 @@ void motor_move_relative(int8 step, char dir) {
             motor_cur_step--;
          drive_stepper(MOTOR_STEPS_INTERVAL, 'B', 1);
       }   
-   }
-   //write_eeprom(1, motor_cur_step);
+   }   
    update_eeprom = 1;
 }
 
 void set_current_time() {
    rtc_set_datetime(date_day, date_mth, date_year, date_dow, time_hour, time_min);
 }
-
-//!float ds_read_temp() {
-//!// Sicaklik okuma fonksiyonu   
-//!   unsigned long int ds_raw;
-//!   float ds_temp;
-//!   
-//!   ds_raw = read_adc();
-//!   ds_temp = ds_raw * 0.4883;
-//!   
-//!   return ds_temp;
-//!}
-//!
 
 #INT_EXT
 void menu_int() {
@@ -205,8 +188,7 @@ void menu_int() {
       else if ( cur_screen_no == 3 ) {   
          motor_period++;
          if ( motor_period > 24 )
-            motor_period = 1;  
-         //write_eeprom(0, motor_period);
+            motor_period = 1;
          update_eeprom = 1;
       }
       
@@ -216,16 +198,14 @@ void menu_int() {
             // Ideal Arttir      
             temp_ideal++;
             if ( temp_ideal > 60 ) 
-               temp_ideal = 10;
-            //write_eeprom(4, temp_ideal);
+               temp_ideal = 10;            
             update_eeprom = 1;
          }         
          else if ( settings_no == 2) {
             // Hassasiyet Arttir
             temp_sensivity++;
             if ( temp_sensivity > 9 )
-               temp_sensivity = 1;
-            //write_eeprom(5, temp_sensivity);
+               temp_sensivity = 1;            
             update_eeprom = 1;
          }
       }
@@ -304,8 +284,7 @@ void menu_int() {
       if ( cur_screen_no == 3 ) {   
          motor_period--;
          if ( motor_period ==  0 )
-            motor_period = 24;    
-         //write_eeprom(0, motor_period);
+            motor_period = 24;
          update_eeprom = 1;
       }
       
@@ -315,16 +294,14 @@ void menu_int() {
             // Ideal Azalt      
             temp_ideal--;
             if ( temp_ideal < 10 ) 
-               temp_ideal = 60;
-            //write_eeprom(4, temp_ideal);
+               temp_ideal = 60;            
             update_eeprom = 1;
          }         
          else if ( settings_no == 2) {
             // Hassasiyet Azalt
             temp_sensivity--;
             if ( temp_sensivity < 1 )
-               temp_sensivity = 9;
-            //write_eeprom(5, temp_sensivity);
+               temp_sensivity = 9; 
             update_eeprom = 1;
          }      
       }
@@ -443,8 +420,7 @@ void menu_int() {
       else if ( cur_screen_no == 6 ) { 
          settings_no = 1;
          motor_cur_step = 0;
-         lcd_update = 1;
-         //write_eeprom(1, motor_cur_step);
+         lcd_update = 1;         
          update_eeprom = 1;
       }
    }
@@ -665,9 +641,8 @@ void read_int() { // Kesme Periyodu = 250ms
       rtc_get_date(date_day, date_mth, date_year, date_dow);
    }
    
-   // Sicakligi Oku
-   //temp = ds_read_temp();
-   //temp = ds1820_read();
+   // Sicakligi Oku   
+   temp = ds1820_read();
    
    // Eger isitma sogutma test menusunde degilse -> Isitma, Sogutma Oku
    if ( cur_screen_no != 5 )
@@ -737,16 +712,9 @@ void main ()
    lcd_init(); 
    rtc_init();
    delay_ms(20);
-   //rtc_set_datetime(29,4,14,2,22,54);   // Varsayilan saat ayarlama;
-     
-   //setup_adc(ADC_CLOCK_INTERNAL);
-   //setup_adc_ports(AN0);
-
+   
    set_tris_a(0x1E);
-   
-   //set_adc_channel(0);
-   //delay_us(20);
-   
+      
    get_from_eeprom();
       
    setup_timer_0(RTCC_INTERNAL | RTCC_DIV_256); // timer0

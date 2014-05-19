@@ -1,4 +1,4 @@
-#define ONE_WIRE_PIN PIN_A0
+#define ONE_WIRE_PIN PIN_C6
 
 void onewire_reset() {
    output_low(ONE_WIRE_PIN);
