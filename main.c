@@ -5,7 +5,7 @@
 //########################//
 
 #include <16f877a.h>
-#device ADC=10
+//#device ADC=10
 
 #fuses HS,NOWDT,NOPROTECT,NOBROWNOUT,NOLVP
 #use delay(clock = 4000000)
@@ -20,6 +20,7 @@
 
 #include <lcd.c>
 #include <ds1302.c>
+#include <ds18b20.c>
 #include <stepper.c>
 
 #define BUTTON_MENU   PIN_A1
@@ -125,16 +126,17 @@ void set_current_time() {
    rtc_set_datetime(date_day, date_mth, date_year, date_dow, time_hour, time_min);
 }
 
-float ds_read_temp() {
-// Sicaklik okuma fonksiyonu   
-   unsigned long int ds_raw;
-   float ds_temp;
-   
-   ds_raw = read_adc();
-   ds_temp = ds_raw * 0.4883;
-   
-   return ds_temp;
-}
+//!float ds_read_temp() {
+//!// Sicaklik okuma fonksiyonu   
+//!   unsigned long int ds_raw;
+//!   float ds_temp;
+//!   
+//!   ds_raw = read_adc();
+//!   ds_temp = ds_raw * 0.4883;
+//!   
+//!   return ds_temp;
+//!}
+//!
 
 #INT_EXT
 void menu_int() {
@@ -665,7 +667,7 @@ void read_int() { // Kesme Periyodu = 250ms
    }
    
    // Sicakligi Oku
-   temp = ds_read_temp();
+   //temp = ds_read_temp();
    
    // Eger isitma sogutma test menusunde degilse -> Isitma, Sogutma Oku
    if ( cur_screen_no != 5 )
@@ -722,6 +724,8 @@ void get_from_eeprom() {
       
    if ( temp_sensivity == 0xFF )
       temp_sensivity = 5;
+      
+   update_eeprom = 1;
 }
 
 void main ()
@@ -731,13 +735,13 @@ void main ()
    delay_ms(20);
    //rtc_set_datetime(29,4,14,2,22,54);   // Varsayilan saat ayarlama;
      
-   setup_adc(ADC_CLOCK_INTERNAL);
-   setup_adc_ports(AN0);
+   //setup_adc(ADC_CLOCK_INTERNAL);
+   //setup_adc_ports(AN0);
 
    set_tris_a(0x1F);
    
-   set_adc_channel(0);
-   delay_us(20);
+   //set_adc_channel(0);
+   //delay_us(20);
    
    get_from_eeprom();
       
@@ -745,6 +749,7 @@ void main ()
    setup_timer_1(T1_INTERNAL | T1_DIV_BY_8); // timer1
    set_timer0(0); // TIMER0 65ms = (256*(2^8 - 12)*4) / 4MHZ
    set_timer1(34286); // TIMER1 250ms = (8*(2^16 - 34286)*4) / 4MHZ
+   
    enable_interrupts(INT_EXT);
    enable_interrupts(INT_TIMER0);
    enable_interrupts(INT_TIMER1);
@@ -763,7 +768,6 @@ void main ()
          
          delay_ms(20);
          update_eeprom = 0;         
-      }
-   
+      }   
    }
 }
