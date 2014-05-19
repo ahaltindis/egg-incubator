@@ -740,8 +740,7 @@ void main ()
    delay_us(20);
    
    get_from_eeprom();
-   calculate_next_turn();
-   
+      
    setup_timer_0(RTCC_INTERNAL | RTCC_DIV_256); // timer0
    setup_timer_1(T1_INTERNAL | T1_DIV_BY_8); // timer1
    set_timer0(0); // TIMER0 65ms = (256*(2^8 - 12)*4) / 4MHZ
@@ -754,9 +753,7 @@ void main ()
    while(TRUE){
    
       if (update_eeprom) {
-         lcd_gotoxy(1,1);
-         printf(lcd_putc, " # YAZILIYOR # ");
-      
+         
          write_eeprom(0, motor_period);
          write_eeprom(1, motor_cur_step);
          write_eeprom(2, next_turn_hr);
@@ -764,8 +761,8 @@ void main ()
          write_eeprom(4, temp_ideal);
          write_eeprom(5, temp_sensivity);
          
-         update_eeprom = 0;
-         
+         delay_ms(20);
+         update_eeprom = 0;         
       }
    
    }
