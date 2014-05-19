@@ -56,6 +56,7 @@ int1 heater = 0;   // Isitma durum degiskeni
 int1 cooler = 0;   // Sogutma durum degiskeni
 
 int8 lint_count = 0; // Lcd Kesmesinde olusan kesmeleri sayan degisken
+int1 update_eeprom = 0;
 
 unsigned int8 motor_step_count = 50; // Her periyot vaktinde motorun dondurulecegi adim sayisi
 
@@ -92,8 +93,9 @@ void calculate_next_turn(){
       else
          next_turn_min--;
    }
-   write_eeprom(2, next_turn_hr);
-   write_eeprom(3, next_turn_min);   
+   update_eeprom = 1;
+   //write_eeprom(2, next_turn_hr);
+   //write_eeprom(3, next_turn_min);   
 }
 
 void motor_move_relative(int8 step, char dir) {
@@ -115,7 +117,8 @@ void motor_move_relative(int8 step, char dir) {
          drive_stepper(MOTOR_STEPS_INTERVAL, 'B', 1);
       }   
    }
-   write_eeprom(1, motor_cur_step);
+   //write_eeprom(1, motor_cur_step);
+   update_eeprom = 1;
 }
 
 void set_current_time() {
@@ -202,7 +205,8 @@ void menu_int() {
          motor_period++;
          if ( motor_period > 24 )
             motor_period = 1;  
-         write_eeprom(0, motor_period);
+         //write_eeprom(0, motor_period);
+         update_eeprom = 1;
       }
       
       // TERMOSTAT AYARLARMA MENU && BUTON YUKARI
@@ -212,14 +216,16 @@ void menu_int() {
             temp_ideal++;
             if ( temp_ideal > 60 ) 
                temp_ideal = 10;
-            write_eeprom(4, temp_ideal);
+            //write_eeprom(4, temp_ideal);
+            update_eeprom = 1;
          }         
          else if ( settings_no == 2) {
             // Hassasiyet Arttir
             temp_sensivity++;
             if ( temp_sensivity > 9 )
                temp_sensivity = 1;
-            write_eeprom(5, temp_sensivity);
+            //write_eeprom(5, temp_sensivity);
+            update_eeprom = 1;
          }
       }
       
@@ -298,7 +304,8 @@ void menu_int() {
          motor_period--;
          if ( motor_period ==  0 )
             motor_period = 24;    
-         write_eeprom(0, motor_period);
+         //write_eeprom(0, motor_period);
+         update_eeprom = 1;
       }
       
       // TERMOSTAT AYARLARMA MENU && BUTON ASAGI
@@ -308,14 +315,16 @@ void menu_int() {
             temp_ideal--;
             if ( temp_ideal < 10 ) 
                temp_ideal = 60;
-            write_eeprom(4, temp_ideal);
+            //write_eeprom(4, temp_ideal);
+            update_eeprom = 1;
          }         
          else if ( settings_no == 2) {
             // Hassasiyet Azalt
             temp_sensivity--;
             if ( temp_sensivity < 1 )
                temp_sensivity = 9;
-            write_eeprom(5, temp_sensivity);
+            //write_eeprom(5, temp_sensivity);
+            update_eeprom = 1;
          }      
       }
       
@@ -434,7 +443,8 @@ void menu_int() {
          settings_no = 1;
          motor_cur_step = 0;
          lcd_update = 1;
-         write_eeprom(1, motor_cur_step);
+         //write_eeprom(1, motor_cur_step);
+         update_eeprom = 1;
       }
    }
    else if(input(BUTTON_CHG) && cur_screen_no == 0)
@@ -741,5 +751,22 @@ void main ()
    enable_interrupts(INT_TIMER1);
    enable_interrupts(GLOBAL);
  
-   while(TRUE);
+   while(TRUE){
+   
+      if (update_eeprom) {
+         lcd_gotoxy(1,1);
+         printf(lcd_putc, " # YAZILIYOR # ");
+      
+         write_eeprom(0, motor_period);
+         write_eeprom(1, motor_cur_step);
+         write_eeprom(2, next_turn_hr);
+         write_eeprom(3, next_turn_min);
+         write_eeprom(4, temp_ideal);
+         write_eeprom(5, temp_sensivity);
+         
+         update_eeprom = 0;
+         
+      }
+   
+   }
 }
