@@ -38,7 +38,7 @@
 
 #define MOTOR_STEPS_INTERVAL 15 // Her adim arasinda beklenilecek sure -> motor hizini belirler.
 #define MOTOR_MAX_STEPS 200   // Motorun tam bir tur icin gerekli adim sayisi
-#define MOTOR_TEST_STEP 5     // Test modunda motorun her seferinde atacagi adim.
+#define MOTOR_TEST_STEP 50     // Test modunda motorun her seferinde atacagi adim.
 
 int8 cur_screen_no = 0; // Aktif olan ekran no, 0-> Ana Ekran  1,2,3,... -> Ayarlar Ekrani
 int8 cur_info_no = 1; // Ana ekranda aktif olan bilgi ekrani no
@@ -441,6 +441,7 @@ void menu_int() {
 #INT_TIMER0
 void lcd_int() { // Kesme Periyodu = 65ms
 // LCD Ekrandaki yazilari gosteren kesme fonksiyonu
+   
    set_timer0(0);   
    lint_count++;
    
@@ -623,7 +624,7 @@ void calc_cooler_heater() {
    if (temp < temp_ideal - temp_sensivity)
    // SICAKLIK (IDEAL-HASSASIYET) ALTINA DUSERSE, ISITMA EMRI GONDER
       heater = 1;
-   else if (temp >= temp_ideal)
+   else if (temp >= temp_ideal + 0.5)
    // YOKSA ISITMAYI IPTAL ET
       heater = 0;
       
@@ -638,13 +639,15 @@ void calc_cooler_heater() {
 #INT_TIMER1
 void read_int() { // Kesme Periyodu = 250ms
 
+   //restart_wdt();
+   
    // Saat degistirme ayarinda degilse -> Saati Oku
    if ( cur_screen_no != 1 ) {
       rtc_get_time(time_hour, time_min, time_sec);
    }
    
    // Tarih degistirme ayarinda degilse -> Tarihi Oku
-   else if ( cur_screen_no != 2 ) {
+   if ( cur_screen_no != 2 ) {
       rtc_get_date(date_day, date_mth, date_year, date_dow);
    }
    
@@ -733,7 +736,8 @@ void main ()
    get_from_eeprom();
    
    output_low(MOTOR_ENABLE); // Acilista motoru kapat
-      
+   
+   //setup_wdt(WDT_2304MS);
    setup_timer_0(RTCC_INTERNAL | RTCC_DIV_256); // timer0
    setup_timer_1(T1_INTERNAL | T1_DIV_BY_8); // timer1
    set_timer0(0); // TIMER0 65ms = (256*(2^8 - 12)*4) / 4MHZ
